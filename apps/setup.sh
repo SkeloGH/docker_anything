@@ -1,163 +1,76 @@
 #!/bin/bash
 set -e
+source ./constants.sh
+source ./utils.sh
+
 if [ $# -eq 0 ]
   then
-    printf \
-'''
-SYNOPSIS
-
-    usage: setup [build] [down]
-
-DESCRIPTION
-
-    up
-        Build the docker images
-
-    down
-        Removes ALL images and containers
-
-'''
+    echolor "$INFO_FMT" "$SYNOPSIS"
 fi
-
-appname='pingpong'
-
 
 function up {
     __DIRNAME__=$(pwd)
-    # list files and dirs
-    # get only the ones that matches the 123-something-node pattern
-    __SWARM_NODES=$(ls -1 | grep -E '^([0-9]{3}-).+(-node)$')
+    __SWARM_NODES=$(ls -1 | grep -E $NODE_NAME_PATTERN)
 
-echo \
-'''
-################## Building containers
-'''
+    echolor "$CMD_FMT" "$fn_UP_HEADLINE"
+
     for node in $__SWARM_NODES; do
         node_dir="$__DIRNAME__/$node"
 
         cd "$node_dir" || exit
-echo \
-"""
-    docker build --rm -t \"$node\" -f \"$node_dir/Dockerfile\" .
 
-    -- TODO --
-    Cleanup and exit after build failure
-    -- ODOT --
-"""
+        echolor "$CMD_FMT" "$fn_UP_BODY"
         docker build -t "$node" -f "$node_dir/Dockerfile" .
     done
 
-    printf "\n    docker images --all \n"
-    docker images --all
-
-    printf "\n    docker ps --all \n"
-    docker ps --all
+    echo_run "docker images --all"
+    echo_run "docker ps --all"
 }
 
 
 function down {
-    reportAll \
-'''
-################## Cleanup
+    echolor "$INFO_FMT" "$fn_DOWN_HEADLINE"
+    reportAll
 
-Before:
-'''
+    echo_run "docker stack rm $APP_NAME || true"
+    echo_run "docker swarm leave --force || true"
 
-    printf "\n    Taking down the app    \n"
-    docker stack rm $appname
-    printf "\n    Taking down the swarm    \n"
-    docker swarm leave --force
-
-    printf "\n    Removing images    \n"
+    echolor "$CMD_FMT" "\n>>> Removing images \n\n"
     for image in $(docker images -q); do
         docker rmi --force "$image"
     done
 
-    printf "\n    Removing containers    \n"
+    echolor "$CMD_FMT" "\n>>> Removing containers \n\n"
     for container in $(docker ps -q); do
         docker rm --force "$container"
     done
 
-    reportAll \
-'''
-After:
-'''
+    echolor "$INFO_FMT" "$fn_DOWN_FOOTER"
+    reportAll
 
 }
 
 function run {
-echo \
-"""
-################## Start nodes for app $appname
+    echolor "$INFO_FMT" "$fn_RUN_HEADLINE"
 
-Before:
-"""
-    docker images --all
-    printf "\n"
-    docker ps --all
+    echo_run "docker images --all"
+    echo_run "docker ps --all"
+    echo_run "docker swarm init"
+    echo_run "docker stack deploy -c docker-compose.yml $APP_NAME"
 
-echo \
-'''
-docker swarm init
-'''
-    docker swarm init
-echo \
-"""
-docker stack deploy -c docker-compose.yml $appname
-"""
-    docker stack deploy -c docker-compose.yml $appname
-
-echo \
-'''
-After:
-'''
-    docker images --all --all
-    printf "\n"
-    docker ps --all
-echo \
-'''
-docker service ls
-'''
-    docker service ls
-echo \
-"""
-docker service ps \$(docker service ls -q | paste -sd \" \" -)
-"""
-docker service ps $(docker service ls -q | paste -sd " " -)
-echo \
-'''
-docker container ls -q
-'''
-    docker container ls -q
+    echolor "$INFO_FMT" "$fn_RUN_FOOTER"
+    reportAll
 }
 
 function reportAll {
-    echo "$1"
-echo \
-'''
-docker images --all
-'''
-    docker images --all
-echo \
-'''
-docker ps --all
-'''
-    docker ps --all
-echo \
-'''
-docker service ls
-'''
-    docker service ls
-echo \
-"""
-docker service ps \$(docker service ls -q | paste -sd \" \" -)
-"""
-    docker service ps $(docker service ls -q | paste -sd " " -)
-echo \
-'''
-docker container ls -q
-'''
-    docker container ls -q
+    echo_run "docker images --all"
+    echo_run "docker ps --all"
+    echo_run "docker service ls || true"
+
+    echolor "$CMD_FMT" "\n>>> docker service ps \$(docker service ls -q | paste -sd \" \" -)\n\n"
+    docker service ps $(docker service ls -q | paste -sd " " -) || true
+
+    echo_run "docker container ls -q"
 }
 
 while [[ $# -gt 0 ]]
