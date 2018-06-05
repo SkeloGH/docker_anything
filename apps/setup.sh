@@ -1,12 +1,16 @@
 #!/bin/bash
 set -e
-source ./constants.sh
-source ./utils.sh
+THIS_PATH="`dirname \"$0\"`"
+source "$THIS_PATH/constants.sh"
+source "$THIS_PATH/utils.sh"
 
 if [ $# -eq 0 ]
-  then
-    echolor "$INFO_FMT" "$SYNOPSIS"
+  then synopsis
 fi
+
+function synopsis {
+  echolor "$INFO_FMT" "$SYNOPSIS"
+}
 
 function up {
     __DIRNAME__=$(pwd)
@@ -18,6 +22,9 @@ function up {
         node_dir="$__DIRNAME__/$node"
 
         cd "$node_dir" || exit
+        if [[ -e ".lockfile" ]]; then
+          continue
+        fi
 
         echolor "$CMD_FMT" "$fn_UP_BODY"
         docker build -t "$node" -f "$node_dir/Dockerfile" .
@@ -75,25 +82,32 @@ function reportAll {
 
 while [[ $# -gt 0 ]]
 do
-key="$1"
+  key="$1"
 
-case $key in
-    "up")
-      up
-    shift
-    ;;"run")
-      run
-    shift
-    ;;"status")
-      reportAll
-    shift
-    ;;"down")
-      down
-    shift
-    ;;
-    *)
-      # unknown option
-    ;;
-esac
+  case $key in
+      "up")
+        up
+      shift
+      ;;
+      "run")
+        run
+      shift
+      ;;
+      "status")
+        reportAll
+      shift
+      ;;
+      "down")
+        down
+      shift
+      ;;
+      "verify")
+        synopsis
+      shift
+      ;;
+      *)
+        # unknown option
+      ;;
+  esac
 shift
 done

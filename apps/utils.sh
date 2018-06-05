@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
-source ./constants.sh
+THIS_PATH="`dirname \"$0\"`"
+source "$THIS_PATH/constants.sh"
 
 function echo_run {
     echolor "$CMD_FMT" "\n>>> $1\n\n"
