@@ -23,6 +23,12 @@ DESCRIPTION
     up
         Build the docker images
 
+    run
+        Once images are built, spin them on
+
+    status
+        Get the current swarm state
+
     down
         Removes ALL images and containers
 
@@ -47,11 +53,11 @@ Before:
 fn_DOWN_FOOTER="""$WARN_FMT
 After:
 """
-fn_RUN_HEADLINE="""$WARN_FMT
+fn_RUN_HEADLINE="""$INFO_FMT
 >>> Start nodes for app $appname
 
 Before:
 """
-fn_RUN_FOOTER="""$WARN_FMT
+fn_RUN_FOOTER="""$INFO_FMT
 After:
 """

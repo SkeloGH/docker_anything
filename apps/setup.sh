@@ -23,8 +23,7 @@ function up {
         docker build -t "$node" -f "$node_dir/Dockerfile" .
     done
 
-    echo_run "docker images --all"
-    echo_run "docker ps --all"
+    reportAll
 }
 
 
@@ -32,15 +31,16 @@ function down {
     echolor "$INFO_FMT" "$fn_DOWN_HEADLINE"
     reportAll
 
-    echo_run "docker stack rm $APP_NAME || true"
-    echo_run "docker swarm leave --force || true"
+    echolor "$WARN_FMT" "\n>>> Tearing down swarm \n\n"
+    echo_run "docker stack rm \"$APP_NAME\"" || true
+    echo_run "docker swarm leave --force" || true
 
-    echolor "$CMD_FMT" "\n>>> Removing images \n\n"
+    echolor "$WARN_FMT" "\n>>> Removing images\n"
     for image in $(docker images -q); do
         docker rmi --force "$image"
     done
 
-    echolor "$CMD_FMT" "\n>>> Removing containers \n\n"
+    echolor "$WARN_FMT" "\n>>> Removing containers\n"
     for container in $(docker ps -q); do
         docker rm --force "$container"
     done
@@ -83,6 +83,9 @@ case $key in
     shift
     ;;"run")
       run
+    shift
+    ;;"status")
+      reportAll
     shift
     ;;"down")
       down
